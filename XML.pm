@@ -10,7 +10,7 @@ use vars qw($VERSION @ISA @EXPORT @EXPORT_OK);
 require Exporter;
 
 @ISA = qw(Exporter Mail::Internet);
-$VERSION = '0.01';
+$VERSION = '0.02';
 
 
 sub toXML {
@@ -53,6 +53,7 @@ sub __escape_xml {
 
 1;
 __END__
+
 =head1 NAME
 
 Mail::XML - Adds a toXML() method to Mail::Internet.
