@@ -4,52 +4,49 @@
 package Mail::XML;
 use strict;
 use Mail::Internet;
+use XML::Writer;
+use IO::Scalar;
 use Carp;
 use vars qw($VERSION @ISA @EXPORT @EXPORT_OK);
 
 require Exporter;
 
 @ISA = qw(Exporter Mail::Internet);
-$VERSION = '0.02';
-
+$VERSION = '0.03';
 
 sub toXML {
 	my ($self) = shift;
 	my $head = $self->head() || croak;
 	my $body = $self->body() || croak;
-	my $result = '<?xml version="1.0"?>' . "\n<Message>\n<Head>\n";
-
+	
+	my $data = "";
+	my $hdl = new IO::Scalar(\$data);
+	my $w = new XML::Writer(OUTPUT => $hdl);
+	$w->xmlDecl("ISO-8859-1");
+	$w->comment("Mail::XML version " . $VERSION);
+	$w->startTag("Message");
+	$w->startTag("Head");
 	foreach my $tag ($head->tags()) {
 		chomp(my $c = $head->get($tag));
 		if ($tag =~ m!From\s!) {
 			$tag = "MTA_From";
-		} 
-		my $cont = $self->__escape_xml($c);
-		$result .= "<$tag>$cont</$tag>\n";
+		}
+		$w->startTag($tag);
+		$w->characters($c);
+		$w->endTag($tag);
 	}
+	$w->endTag("Head");
+	$w->startTag("Body");
 
-	$result .= "</Head>\n<Body>\n<![CDATA[\n";
-	
 	foreach (@$body) {
-		$result .= $_;
+		$w->characters($_);
 	}
-
-	$result .= "\n]]>\n</Body>\n</Message>\n";
-	return $result;
+	$w->endTag("Body");
+	$w->endTag("Message");
+	$w->end();
+	$hdl->close();
+	return $data;
 }
-
-sub __escape_xml {
-	my $self = shift;
-        my $line = shift;
-        $line =~ s/\&/\&amp\;/g;
-        $line =~ s/>/\&gt\;/g;
-        $line =~ s/</\&lt\;/g;
-        $line =~ s/\'/\&quot\;/g;
-        $line =~ s/\"/\&quot\;/g;
-        return($line);
-}       
-
-
 
 1;
 __END__
